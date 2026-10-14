@@ -221,14 +221,15 @@ flowchart TD
 > **图 3：Scaled Dot-Product Attention 的计算过程。**
 
 ### 5.2 核心公式
-$$
 
+```math
 \mathrm{Attention}(Q,K,V)
-
-=\mathrm{softmax}\left(\frac{QK^\top}{\sqrt{d_k}}+M\right)V
-
-$$
-
+=
+\mathrm{softmax}\left(
+\frac{QK^{\top}}{\sqrt{d_k}}+M
+\right)V
+```
+  
 其中：
 
 - `QKᵀ`：计算 Query 与各 Key 的点积相似度。
