@@ -1,9 +1,9 @@
 # 03 LLM Inference：从下一个 Token 预测到企业级推理服务
 
-> **学习状态：待学习 → 系统学习中**
-> **所属模块：** 01-LLM-Fundamentals
-> **学习目标：** 理解推理的数学机制、Prefill/Decode、KV Cache、采样、推理服务与性能指标，能解释企业 Agent 中的延迟、显存和成本问题。
-> **阅读方式：** 先理解单请求推理，再学习服务端调度，最后讨论优化取舍。本文不包含代码实践。
+> <strong>学习状态：待学习 → 系统学习中</strong>
+> <strong>所属模块：</strong> 01-LLM-Fundamentals
+> <strong>学习目标：</strong> 理解推理的数学机制、Prefill/Decode、KV Cache、采样、推理服务与性能指标，能解释企业 Agent 中的延迟、显存和成本问题。
+> <strong>阅读方式：</strong> 先理解单请求推理，再学习服务端调度，最后讨论优化取舍。本文不包含代码实践。
 
 ## 目录
 
@@ -28,7 +28,7 @@
 
 ## 1. 什么是 LLM Inference？
 
-**LLM Inference（Large Language Model Inference，大语言模型推理）**：模型参数训练完成后，利用固定的权重，根据输入上下文计算输出的过程。对于典型的 **Decoder-only（仅解码器）自回归语言模型**，核心任务是反复预测“下一个 Token 的概率分布”，再按解码策略选出 Token，直到满足停止条件。
+<strong>LLM Inference（Large Language Model Inference，大语言模型推理）</strong>：模型参数训练完成后，利用固定的权重，根据输入上下文计算输出的过程。对于典型的 <strong>Decoder-only（仅解码器）自回归语言模型</strong>，核心任务是反复预测“下一个 Token 的概率分布”，再按解码策略选出 Token，直到满足停止条件。
 
 需要区分三件事：
 
@@ -39,7 +39,7 @@
 | Inference（推理） | 前向计算 + 解码策略 + 状态管理 + 输出 | 聊天、RAG、Agent 工具调用、文档翻译 |
 | Serving（推理服务） | 为多个请求提供模型推理的系统 | 并发调度、显存管理、限流、监控与扩容 |
 
-**重要边界：** 本文主要讨论自回归文本生成模型；Encoder-only 模型的分类/向量推理、Encoder–Decoder 模型的推理路径有所不同。
+<strong>重要边界：</strong> 本文主要讨论自回归文本生成模型；Encoder-only 模型的分类/向量推理、Encoder–Decoder 模型的推理路径有所不同。
 
 ## 2. 推理为什么是逐 Token 生成？
 
@@ -49,7 +49,7 @@
 P(y_1,\ldots,y_T\mid x)=\prod_{t=1}^{T}P(y_t\mid x,y_1,\ldots,y_{t-1})
 ```
 
-这里的 $`x`$ 是输入上下文，$`y_t`$ 是第 $`t`$ 个输出 Token。**Causal Mask（因果掩码）**限制模型在当前位置访问未来位置，保证自回归条件成立。
+这里的 $`x`$ 是输入上下文，$`y_t`$ 是第 $`t`$ 个输出 Token。<strong>Causal Mask（因果掩码）</strong>限制模型在当前位置访问未来位置，保证自回归条件成立。
 
 ```mermaid
 flowchart LR
@@ -62,7 +62,7 @@ flowchart LR
     F -- 是 --> G[输出完整回答]
 ```
 
-> **术语注释：** **Autoregressive（自回归）**：每一步依赖此前已生成内容，适用于逐步生成文本。**Causal Mask**：屏蔽未来 Token 的注意力位置，防止“提前看答案”。**Token**：模型处理的离散文本单位，不等同于一个汉字或单词。
+> <strong>术语注释：</strong> <strong>Autoregressive（自回归）</strong>：每一步依赖此前已生成内容，适用于逐步生成文本。<strong>Causal Mask</strong>：屏蔽未来 Token 的注意力位置，防止“提前看答案”。<strong>Token</strong>：模型处理的离散文本单位，不等同于一个汉字或单词。
 
 ## 3. 一次推理请求的完整生命周期
 
@@ -82,12 +82,12 @@ flowchart TD
     K --> L[流式/非流式返回]
 ```
 
-**阶段解释：**
+<strong>阶段解释：</strong>
 
-- **Chat Template（对话模板）**：将 system/user/assistant/tool 等角色转为模型训练时约定的消息格式；模板不匹配可能造成输出异常。
-- **Tokenizer（分词器）**：将文本转为 Token ID；不同模型词表不同，输入 Token 数也可能不同。
-- **Scheduler（调度器）**：决定何时、以何种批次执行请求；主要用于高并发服务。
-- **Detokenization（反分词）**：将生成的 Token ID 转回可读文本；流式场景可能需要处理不完整字节或子词。
+- <strong>Chat Template（对话模板）</strong>：将 system/user/assistant/tool 等角色转为模型训练时约定的消息格式；模板不匹配可能造成输出异常。
+- <strong>Tokenizer（分词器）</strong>：将文本转为 Token ID；不同模型词表不同，输入 Token 数也可能不同。
+- <strong>Scheduler（调度器）</strong>：决定何时、以何种批次执行请求；主要用于高并发服务。
+- <strong>Detokenization（反分词）</strong>：将生成的 Token ID 转回可读文本；流式场景可能需要处理不完整字节或子词。
 
 ## 4. Prefill 与 Decode 的本质区别
 
@@ -99,7 +99,7 @@ flowchart TD
 | 影响体验 | 主要影响首 Token 时间 | 主要影响后续 Token 的输出速度 |
 | 典型优化 | Chunked Prefill、Prefix Cache、输入压缩 | KV Cache、批处理、量化、推测解码 |
 
-> **注意：** Prefill 与 Decode 的瓶颈是典型趋势，不是绝对规律；模型大小、输入长度、并发量、硬件及算子实现都会改变瓶颈。
+> <strong>注意：</strong> Prefill 与 Decode 的瓶颈是典型趋势，不是绝对规律；模型大小、输入长度、并发量、硬件及算子实现都会改变瓶颈。
 
 ```mermaid
 sequenceDiagram
@@ -117,14 +117,14 @@ sequenceDiagram
     end
 ```
 
-**延伸概念：** **Chunked Prefill（分块预填充）**把长 Prompt 拆成较小计算块，便于与其他请求的 Decode 交错调度；**Prefill/Decode Disaggregation（预填充与解码分离部署）**让两类阶段由不同资源池处理，用于更大规模的服务优化。
+<strong>延伸概念：</strong> <strong>Chunked Prefill（分块预填充）</strong>把长 Prompt 拆成较小计算块，便于与其他请求的 Decode 交错调度；<strong>Prefill/Decode Disaggregation（预填充与解码分离部署）</strong>让两类阶段由不同资源池处理，用于更大规模的服务优化。
 
 ## 5. KV Cache：为什么不必重复计算历史？
 
-**KV Cache（Key-Value Cache，键值缓存）**保存 Transformer 各注意力层历史 Token 的 Key 和 Value 表示。生成下一个 Token 时，历史 Token 的 K/V 可以复用，无须每一步重新计算整段历史的 K/V。
+<strong>KV Cache（Key-Value Cache，键值缓存）</strong>保存 Transformer 各注意力层历史 Token 的 Key 和 Value 表示。生成下一个 Token 时，历史 Token 的 K/V 可以复用，无须每一步重新计算整段历史的 K/V。
 
 ```math
-\operatorname{Attention}(Q,K,V)=\operatorname{softmax}\left(\frac{QK^\top}{\sqrt{d_k}}+M\right)V
+\mathrm{Attention}(Q,K,V)=\mathrm{softmax}\left(\frac{QK^\top}{\sqrt{d_k}}+M\right)V
 ```
 
 其中 $`Q`$ 是 Query（查询），$`K`$ 是 Key（键），$`V`$ 是 Value（值），$`d_k`$ 是 Key 的维度，$`M`$ 是注意力掩码。
@@ -141,7 +141,7 @@ flowchart LR
     H --> C
 ```
 
-**为什么有用？** KV Cache 以额外显存换取避免重复计算，长上下文生成时尤其重要。但上下文越长、并发请求越多，缓存占用越大。
+<strong>为什么有用？</strong> KV Cache 以额外显存换取避免重复计算，长上下文生成时尤其重要。但上下文越长、并发请求越多，缓存占用越大。
 
 ### 5.1 粗略估算 KV Cache 大小
 
@@ -155,7 +155,7 @@ flowchart LR
 - $`S`$：缓存序列长度；$`B`$：并发序列数；$`b`$：每个缓存元素所占字节。
 - 前面的 $`2`$ 分别对应 Key 与 Value。
 
-**例子（仅用于估算）：** 32 层、8 个 KV Heads、Head 维度 128、序列长度 4096、1 个序列、每元素 2 字节，则 KV Cache 约为 **512 MiB**。实际使用还受缓存分配策略、模型架构、分块、碎片与运行时开销影响。
+<strong>例子（仅用于估算）：</strong> 32 层、8 个 KV Heads、Head 维度 128、序列长度 4096、1 个序列、每元素 2 字节，则 KV Cache 约为 <strong>512 MiB</strong>。实际使用还受缓存分配策略、模型架构、分块、碎片与运行时开销影响。
 
 ### 5.2 MHA、MQA、GQA 的区别
 
@@ -165,17 +165,17 @@ flowchart LR
 | MQA | Multi-Query Attention，多查询注意力 | 多个 Q Heads 共享一组 K/V | 显著减少 KV Cache 与读取量 |
 | GQA | Grouped-Query Attention，分组查询注意力 | 每组 Q Heads 共享一组 K/V | 在质量与推理效率间折中 |
 
-**补充：** **Prefix Caching（前缀缓存）**可在条件满足时复用多个请求共有前缀的 KV；不等于所有语义相似请求都能复用。**PagedAttention（分页注意力）**按块管理 KV Cache，降低内存碎片与浪费；是推理服务的内存管理技术，而非改变语言模型训练目标。
+<strong>补充：</strong> <strong>Prefix Caching（前缀缓存）</strong>可在条件满足时复用多个请求共有前缀的 KV；不等于所有语义相似请求都能复用。<strong>PagedAttention（分页注意力）</strong>按块管理 KV Cache，降低内存碎片与浪费；是推理服务的内存管理技术，而非改变语言模型训练目标。
 
 ## 6. Logits、概率与解码策略
 
-模型输出通常是词表大小的 **Logits（未归一化分数）**，使用 Softmax 转为概率：
+模型输出通常是词表大小的 <strong>Logits（未归一化分数）</strong>，使用 Softmax 转为概率：
 
 ```math
 P_i=\frac{\exp(z_i/T)}{\sum_j\exp(z_j/T)}
 ```
 
-$`z_i`$ 是第 $`i`$ 个 Token 的 Logit，$`T`$ 是 Temperature（温度）。在 $`T>0`$ 的前提下，温度越低，概率分布通常越集中；越高，分布通常越平坦。**Temperature = 0** 在很多 API 中作为贪心解码的约定，并非直接代入上式计算。
+$`z_i`$ 是第 $`i`$ 个 Token 的 Logit，$`T`$ 是 Temperature（温度）。在 $`T>0`$ 的前提下，温度越低，概率分布通常越集中；越高，分布通常越平坦。<strong>Temperature = 0</strong> 在很多 API 中作为贪心解码的约定，并非直接代入上式计算。
 
 | 策略 | 是什么 | 主要作用 | 常见场景与注意事项 |
 |---|---|---|---|
@@ -189,18 +189,18 @@ $`z_i`$ 是第 $`i`$ 个 Token 的 Logit，$`T`$ 是 Temperature（温度）。�
 
 ### 6.1 为什么“低温度”不等于“绝对确定”？
 
-实际输出还受并行数值计算、随机种子、模型版本、服务端实现、工具调用及提示词差异影响。对于严格格式任务，**结构化输出约束 + 字段校验 + 失败重试**通常比单纯降低温度更可靠。
+实际输出还受并行数值计算、随机种子、模型版本、服务端实现、工具调用及提示词差异影响。对于严格格式任务，<strong>结构化输出约束 + 字段校验 + 失败重试</strong>通常比单纯降低温度更可靠。
 
 ## 7. 结束条件与流式输出
 
 模型不会“理解自己已经说完”才停止；系统通常综合以下规则：
 
-1. **EOS（End of Sequence，序列结束标记）**：模型输出约定的结束 Token。
-2. **Max New Tokens（最大生成 Token 数）**：限制输出长度，避免无界生成。
-3. **Stop Sequence（停止序列）**：当输出匹配指定文本或标记时停止；行为取决于具体接口。
-4. **结构化/工具调用边界**：模型可能结束当前消息、交还控制权给工具执行器；不同 Chat Template 的标记不相同。
+1. <strong>EOS（End of Sequence，序列结束标记）</strong>：模型输出约定的结束 Token。
+2. <strong>Max New Tokens（最大生成 Token 数）</strong>：限制输出长度，避免无界生成。
+3. <strong>Stop Sequence（停止序列）</strong>：当输出匹配指定文本或标记时停止；行为取决于具体接口。
+4. <strong>结构化/工具调用边界</strong>：模型可能结束当前消息、交还控制权给工具执行器；不同 Chat Template 的标记不相同。
 
-**Streaming（流式输出）**：服务端在完整回答生成前分批传输内容，降低用户等待完整结果的感知延迟。**SSE（Server-Sent Events，服务器发送事件）**是常见的单向服务端推送方式；它是传输协议选择，不是模型推理算法。
+<strong>Streaming（流式输出）</strong>：服务端在完整回答生成前分批传输内容，降低用户等待完整结果的感知延迟。<strong>SSE（Server-Sent Events，服务器发送事件）</strong>是常见的单向服务端推送方式；它是传输协议选择，不是模型推理算法。
 
 ## 8. 显存与算力的主要消耗
 
@@ -210,14 +210,14 @@ $`z_i`$ 是第 $`i`$ 个 Token 的 Logit，$`T`$ 是 Temperature（温度）。�
 M_{total}\approx M_{weights}+M_{KV}+M_{activations}+M_{runtime}
 ```
 
-- **Weights（模型权重）**：模型参数本身；参数量、精度、并行切分决定其占用。
-- **KV Cache**：随序列长度与活跃请求数增加。
-- **Activations（中间激活）**：前向计算过程中的临时张量；受批次与算子影响。
-- **Runtime Workspace（运行时工作区）**：算子临时空间、CUDA Graph、内存池与碎片等。
+- <strong>Weights（模型权重）</strong>：模型参数本身；参数量、精度、并行切分决定其占用。
+- <strong>KV Cache</strong>：随序列长度与活跃请求数增加。
+- <strong>Activations（中间激活）</strong>：前向计算过程中的临时张量；受批次与算子影响。
+- <strong>Runtime Workspace（运行时工作区）</strong>：算子临时空间、CUDA Graph、内存池与碎片等。
 
 ### 8.1 模型量化
 
-**Quantization（量化）**：用更低位宽表示权重或激活，以降低显存占用、改善带宽需求或计算效率。常见术语：
+<strong>Quantization（量化）</strong>：用更低位宽表示权重或激活，以降低显存占用、改善带宽需求或计算效率。常见术语：
 
 | 名称 | 解释 | 作用与限制 |
 |---|---|---|
@@ -227,7 +227,7 @@ M_{total}\approx M_{weights}+M_{KV}+M_{activations}+M_{runtime}
 | GPTQ / AWQ | 训练后权重量化方法 | 主要减少权重占用；具体效果依赖模型与实现 |
 | KV Cache Quantization | 对缓存的 K/V 使用低精度 | 降低长上下文缓存开销；可能影响质量或延迟 |
 
-> **工程提醒：** “模型权重能放进显存”不代表“推理一定不会 OOM”；还必须预留 KV Cache、临时张量和并发空间。
+> <strong>工程提醒：</strong> “模型权重能放进显存”不代表“推理一定不会 OOM”；还必须预留 KV Cache、临时张量和并发空间。
 
 ## 9. 推理加速与服务端调度
 
@@ -244,14 +244,14 @@ M_{total}\approx M_{weights}+M_{KV}+M_{activations}+M_{runtime}
 | Pipeline Parallelism（流水线并行） | 不同层分布到不同设备 | 扩展大模型承载能力 | 多 GPU / 多节点 |
 | Prefill–Decode Disaggregation | 将两阶段拆分至不同服务资源池 | 分别优化计算密集与内存访问密集阶段 | 大规模推理集群 |
 
-**注意：** 这些技术存在取舍：更高吞吐不一定意味着单请求延迟更低；跨设备通信、批处理等待、草稿模型开销都可能抵消收益。
+<strong>注意：</strong> 这些技术存在取舍：更高吞吐不一定意味着单请求延迟更低；跨设备通信、批处理等待、草稿模型开销都可能抵消收益。
 
 ### 9.2 推理框架如何定位？
 
-- **Hugging Face Transformers**：模型加载、生成策略、KV Cache 的通用学习与实验入口。
-- **vLLM**：以高吞吐推理服务、KV Cache 管理、连续批处理等能力著称。
-- **TensorRT-LLM**：NVIDIA 面向高性能 LLM 推理的优化与部署框架。
-- **SGLang**：面向结构化生成与高性能服务的推理框架；具体功能随版本演进。
+- <strong>Hugging Face Transformers</strong>：模型加载、生成策略、KV Cache 的通用学习与实验入口。
+- <strong>vLLM</strong>：以高吞吐推理服务、KV Cache 管理、连续批处理等能力著称。
+- <strong>TensorRT-LLM</strong>：NVIDIA 面向高性能 LLM 推理的优化与部署框架。
+- <strong>SGLang</strong>：面向结构化生成与高性能服务的推理框架；具体功能随版本演进。
 
 不要把“模型（Qwen/Llama）”“推理引擎（vLLM/TensorRT-LLM）”“API 服务层（鉴权、限流、监控）”混为一谈。
 
@@ -271,28 +271,28 @@ M_{total}\approx M_{weights}+M_{KV}+M_{activations}+M_{runtime}
 单请求、输出 Token 数大于 1 时，常见的近似关系为：
 
 ```math
-\operatorname{TPOT}\approx\frac{\operatorname{E2E}-\operatorname{TTFT}}{N_{out}-1}
+\mathrm{TPOT}\approx\frac{\mathrm{E2E}-\mathrm{TTFT}}{N_{out}-1}
 ```
 
-> **重要：** 比较模型性能必须同时报告输入长度、输出长度、并发量、硬件、量化精度、是否流式，以及 P50/P95 等分位数。仅比较“每秒多少 Token”很容易得出误导结论。
+> <strong>重要：</strong> 比较模型性能必须同时报告输入长度、输出长度、并发量、硬件、量化精度、是否流式，以及 P50/P95 等分位数。仅比较“每秒多少 Token”很容易得出误导结论。
 
 ## 11. 企业级 Agent 场景与工程取舍
 
 ### 11.1 RAG 问答
 
-**RAG（Retrieval-Augmented Generation，检索增强生成）**：先从知识库检索资料，再把相关内容提供给模型生成回答。检索结果过长会拉高 Prefill 成本与 TTFT，因此需要检索质量控制、重排、去重与 Token Budget。
+<strong>RAG（Retrieval-Augmented Generation，检索增强生成）</strong>：先从知识库检索资料，再把相关内容提供给模型生成回答。检索结果过长会拉高 Prefill 成本与 TTFT，因此需要检索质量控制、重排、去重与 Token Budget。
 
 ### 11.2 多轮 Agent 与工具调用
 
-**Agent（智能体）**：模型结合规划、工具、状态和上下文完成多步骤任务。每次工具返回的长日志、网页正文或 JSON 都可能被追加到上下文，导致 KV Cache 增长、输入费用上升。常见策略是工具结果摘要、字段过滤、对话历史压缩和限制最大迭代次数。
+<strong>Agent（智能体）</strong>：模型结合规划、工具、状态和上下文完成多步骤任务。每次工具返回的长日志、网页正文或 JSON 都可能被追加到上下文，导致 KV Cache 增长、输入费用上升。常见策略是工具结果摘要、字段过滤、对话历史压缩和限制最大迭代次数。
 
 ### 11.3 企业文档翻译
 
 文档翻译往往具有长输入、术语约束、结构化输出、质量校验和多轮修复特点。可以从三个维度设计：
 
-1. **质量**：术语一致性、数字与单位保真、格式约束、分段上下文一致性。
-2. **效率**：按段落或页面划分任务、控制批次与并发、避免重复翻译、缓存稳定的公共前缀。
-3. **可观测性**：分别记录解析、排队、Prefill、Decode、校验与渲染耗时，避免把全部延迟归咎于模型。
+1. <strong>质量</strong>：术语一致性、数字与单位保真、格式约束、分段上下文一致性。
+2. <strong>效率</strong>：按段落或页面划分任务、控制批次与并发、避免重复翻译、缓存稳定的公共前缀。
+3. <strong>可观测性</strong>：分别记录解析、排队、Prefill、Decode、校验与渲染耗时，避免把全部延迟归咎于模型。
 
 ### 11.4 本地小模型与云 API 如何选择？
 
@@ -304,7 +304,7 @@ M_{total}\approx M_{weights}+M_{KV}+M_{activations}+M_{runtime}
 | 弹性扩容 | 需自行建设 | 通常更容易弹性扩容 |
 | 质量 | 依赖可部署模型能力 | 可选择更大、更强模型 |
 
-**决策原则：** 先明确隐私、质量、吞吐、成本和时延目标，再通过相同测试集和负载做评估；不要只看模型参数量。
+<strong>决策原则：</strong> 先明确隐私、质量、吞吐、成本和时延目标，再通过相同测试集和负载做评估；不要只看模型参数量。
 
 ## 12. 常见误区和故障定位
 
@@ -323,9 +323,11 @@ M_{total}\approx M_{weights}+M_{KV}+M_{activations}+M_{runtime}
 
 ### 13.1 视觉知识图谱
 
-![03 LLM Inference 全景知识图谱](03-LLM-Inference-assets/knowledge-map.png)
+![03 LLM Inference 全景知识图谱](./03-LLM-Inference-assets/knowledge-map.png)
 
-> **说明：** 图片用于快速建立知识框架；精确术语、算法条件和公式以正文及官方资料为准。图片中的内容不替代技术定义。
+> **图片说明：** 图片文件必须与本文一起上传至 `01-LLM-Fundamentals/03-LLM-Inference-assets/knowledge-map.png`；仅上传 `.md` 文件会显示图片失效。
+
+> <strong>说明：</strong> 图片用于快速建立知识框架；精确术语、算法条件和公式以正文及官方资料为准。图片中的内容不替代技术定义。
 
 ### 13.2 推理知识图谱：关键概念及相互关系（Mermaid）
 
@@ -365,7 +367,7 @@ flowchart TB
     class A,B,C,D,E,F group
 ```
 
-> **阅读说明：** 图中的英文缩写与技术方法均可在前文章节和第 15 节术语速查表中找到定义、作用和适用场景。
+> <strong>阅读说明：</strong> 图中的英文缩写与技术方法均可在前文章节和第 15 节术语速查表中找到定义、作用和适用场景。
 
 ### 13.3 GitHub 可直接渲染的知识结构图
 
@@ -393,38 +395,38 @@ flowchart TD
 
 ### 13.4 推荐学习顺序
 
-1. **建立直觉：** 为什么模型不是一次性“写完全文”，而是不断预测下一个 Token。
-2. **理解阶段：** Prompt 如何进入 Prefill，首 Token 如何产生，Decode 如何继续。
-3. **掌握关键优化：** KV Cache、GQA、PagedAttention、量化分别解决什么问题。
-4. **理解输出控制：** Temperature、Top-p、结构化解码与停止条件。
-5. **学习生产服务：** Continuous Batching、Chunked Prefill、推测解码及分离部署。
-6. **形成工程判断：** 用 TTFT、TPOT、P95、显存、成本评价 Agent 系统。
+1. <strong>建立直觉：</strong> 为什么模型不是一次性“写完全文”，而是不断预测下一个 Token。
+2. <strong>理解阶段：</strong> Prompt 如何进入 Prefill，首 Token 如何产生，Decode 如何继续。
+3. <strong>掌握关键优化：</strong> KV Cache、GQA、PagedAttention、量化分别解决什么问题。
+4. <strong>理解输出控制：</strong> Temperature、Top-p、结构化解码与停止条件。
+5. <strong>学习生产服务：</strong> Continuous Batching、Chunked Prefill、推测解码及分离部署。
+6. <strong>形成工程判断：</strong> 用 TTFT、TPOT、P95、显存、成本评价 Agent 系统。
 
 ## 14. 高频面试题
 
-**Q1：LLM 推理和训练最大的区别是什么？** 训练通常计算损失并更新参数；推理主要使用已训练权重进行前向计算和输出生成，线上服务还要处理调度与缓存。
+<strong>Q1：LLM 推理和训练最大的区别是什么？</strong> 训练通常计算损失并更新参数；推理主要使用已训练权重进行前向计算和输出生成，线上服务还要处理调度与缓存。
 
-**Q2：为什么 Prefill 和 Decode 要区分？** 前者并行处理输入并建立缓存，后者逐步生成新 Token，两者资源瓶颈与优化策略不同。
+<strong>Q2：为什么 Prefill 和 Decode 要区分？</strong> 前者并行处理输入并建立缓存，后者逐步生成新 Token，两者资源瓶颈与优化策略不同。
 
-**Q3：KV Cache 缓存了什么，代价是什么？** 缓存各层历史 K/V，减少重复计算；代价是随上下文和并发增加的显存占用。
+<strong>Q3：KV Cache 缓存了什么，代价是什么？</strong> 缓存各层历史 K/V，减少重复计算；代价是随上下文和并发增加的显存占用。
 
-**Q4：GQA 为什么能降低推理显存？** 多个 Query Heads 共享一组 K/V，降低 KV Heads 数量，从而减少缓存体积与访存需求。
+<strong>Q4：GQA 为什么能降低推理显存？</strong> 多个 Query Heads 共享一组 K/V，降低 KV Heads 数量，从而减少缓存体积与访存需求。
 
-**Q5：Top-k 和 Top-p 有何区别？** Top-k 固定候选数量；Top-p 按累计概率动态确定候选集合。
+<strong>Q5：Top-k 和 Top-p 有何区别？</strong> Top-k 固定候选数量；Top-p 按累计概率动态确定候选集合。
 
-**Q6：为什么首 Token 慢，但后续输出很快？** TTFT 包括排队、网络与 Prefill；后续生成通常使用已建立的 KV Cache。
+<strong>Q6：为什么首 Token 慢，但后续输出很快？</strong> TTFT 包括排队、网络与 Prefill；后续生成通常使用已建立的 KV Cache。
 
-**Q7：为什么批处理能提高吞吐，却可能增加延迟？** 批处理提升 GPU 利用率，但请求可能需要等待调度、竞争资源。
+<strong>Q7：为什么批处理能提高吞吐，却可能增加延迟？</strong> 批处理提升 GPU 利用率，但请求可能需要等待调度、竞争资源。
 
-**Q8：PagedAttention 解决什么问题？** 将 KV Cache 组织成可管理的块，改善内存利用率与并发承载能力。
+<strong>Q8：PagedAttention 解决什么问题？</strong> 将 KV Cache 组织成可管理的块，改善内存利用率与并发承载能力。
 
-**Q9：推测解码为什么能加速？** 草稿机制提前提出候选 Token，目标模型并行验证；收益依赖候选接受率及额外开销。
+<strong>Q9：推测解码为什么能加速？</strong> 草稿机制提前提出候选 Token，目标模型并行验证；收益依赖候选接受率及额外开销。
 
-**Q10：如何定位文档翻译 Agent 响应慢？** 将文档解析、检索、排队、Prefill、Decode、工具调用、校验和渲染分别计时，并结合 Token 数与并发量分析。
+<strong>Q10：如何定位文档翻译 Agent 响应慢？</strong> 将文档解析、检索、排队、Prefill、Decode、工具调用、校验和渲染分别计时，并结合 Token 数与并发量分析。
 
-**Q11：量化的收益与风险是什么？** 主要减少权重或缓存内存，有时改善吞吐；但质量、延迟和硬件兼容性需要实测。
+<strong>Q11：量化的收益与风险是什么？</strong> 主要减少权重或缓存内存，有时改善吞吐；但质量、延迟和硬件兼容性需要实测。
 
-**Q12：如何比较本地模型与云 API？** 在相同业务数据与负载下比较质量、TTFT、TPOT、P95、成本、隐私和维护难度。
+<strong>Q12：如何比较本地模型与云 API？</strong> 在相同业务数据与负载下比较质量、TTFT、TPOT、P95、成本、隐私和维护难度。
 
 ## 15. 术语速查表
 
@@ -481,4 +483,4 @@ flowchart TD
 14. [FlashAttention: Fast and Memory-Efficient Exact Attention with IO-Awareness](https://arxiv.org/abs/2205.14135) — 注意力计算的 IO 优化。
 15. [The Curious Case of Neural Text Degeneration](https://arxiv.org/abs/1904.09751) — Nucleus Sampling（Top-p）的研究背景。
 
-> **阅读提示：** 官方文档可能随着框架版本更新而变化；阅读时关注模型架构、软件版本、硬件和测试条件。以上资料用于支持原理学习，不表示所有功能在任意模型和环境中均可直接使用。
+> <strong>阅读提示：</strong> 官方文档可能随着框架版本更新而变化；阅读时关注模型架构、软件版本、硬件和测试条件。以上资料用于支持原理学习，不表示所有功能在任意模型和环境中均可直接使用。
