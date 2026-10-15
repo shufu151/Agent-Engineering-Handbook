@@ -325,8 +325,6 @@ M_{total}\approx M_{weights}+M_{KV}+M_{activations}+M_{runtime}
 
 ![03 LLM Inference 全景知识图谱](./03-LLM-Inference-assets/knowledge-map.png)
 
-> **图片说明：** 图片文件必须与本文一起上传至 `01-LLM-Fundamentals/03-LLM-Inference-assets/knowledge-map.png`；仅上传 `.md` 文件会显示图片失效。
-
 > <strong>说明：</strong> 图片用于快速建立知识框架；精确术语、算法条件和公式以正文及官方资料为准。图片中的内容不替代技术定义。
 
 ### 13.2 推理知识图谱：关键概念及相互关系（Mermaid）
