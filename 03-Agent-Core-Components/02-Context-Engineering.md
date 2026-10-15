@@ -128,14 +128,16 @@ flowchart LR
 
 ### 2.3 Token 预算如何分配？
 
+
 一个概念性的预算关系是：
 
-\[
+$$
 B_{\mathrm{total}} \ge B_{\mathrm{instructions}} + B_{\mathrm{history}} + B_{\mathrm{state}} + B_{\mathrm{retrieval}} + B_{\mathrm{tools}} + B_{\mathrm{output}} + B_{\mathrm{margin}}
-\]
+$$
 
 其中 `margin` 表示安全余量。该式用于工程规划，<strong>不是各厂商通用的精确计费公式</strong>。工具定义、隐藏协议开销和缓存计费等应以具体模型接口为准。
-
+  
+  
 优先预留<strong>输出预算、不可丢失的任务约束、必要证据</strong>，然后再为历史和工具细节分配剩余容量。不要未经测量就使用固定百分比。
 
 ### 图 4｜Token 预算分配示意
