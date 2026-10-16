@@ -9,36 +9,31 @@
 RAG（Retrieval-Augmented Generation，检索增强生成）通过检索外部知识为语言模型提供回答依据。LLM（Large Language Model，大语言模型）的参数知识适合语言理解和一般知识推断；企业制度、技术手册和实时业务事实则需要来自外部系统的可核查证据。<strong>检索是证据获取，生成是证据使用，验证是对结果负责。</strong>
 
 ```mermaid
-mindmap
-  root((RAG完整知识体系))
-    知识工程
-      多源接入
-      版面解析与OCR
-      结构化切块
-      元数据与权限
-      增量索引
-    检索工程
-      查询理解
-      Embedding
-      稀疏与稠密召回
-      混合检索
-      重排序
-    生成工程
-      上下文选择
-      证据约束
-      来源引用
-      证据不足时拒答
-    智能扩展
-      Agentic RAG
-      Self-RAG与CRAG
-      GraphRAG
-      多模态RAG
-    质量与治理
-      分层评测
-      权限隔离
-      版本一致性
-      提示注入防护
-      监控与回归
+flowchart TB
+    A["RAG：检索增强生成"]
+    A --> B["01 知识准备"]
+    B --> C["02 检索与排序"]
+    C --> D["03 证据与生成"]
+    D --> E["04 验证与交付"]
+    E --> F["05 监控与优化"]
+
+    B --- B1["多源接入 · 版面解析 · 结构化切块"]
+    B1 --- B2["元数据 · 权限 · 增量索引"]
+    C --- C1["查询理解 · 稀疏与稠密召回"]
+    C1 --- C2["混合检索 · 重排序"]
+    D --- D1["上下文选择 · 证据约束"]
+    D1 --- D2["来源引用 · 证据不足时拒答"]
+    E --- E1["分层评测 · 权限与版本校验"]
+    F --- F1["监控回归 · 自适应检索"]
+    F1 --- F2["Agentic RAG · GraphRAG · 多模态扩展"]
+    F -.->|"反馈改进"| B
+
+    classDef main fill:#e8f0fe,stroke:#4f76b5,color:#182b49,stroke-width:1.5px
+    classDef phase fill:#e8f5ed,stroke:#4d9570,color:#173b2a
+    classDef detail fill:#ffffff,stroke:#9ba9b7,color:#263341
+    class A main
+    class B,C,D,E,F phase
+    class B1,B2,C1,C2,D1,D2,E1,F1,F2 detail
 ```
 
 <strong>读图：</strong>知识工程决定信息能否被正确表示，检索工程决定证据能否被找到，生成工程决定证据能否被忠实使用，治理体系决定结果能否安全进入生产环境。后续 [混合检索](./02-Hybrid-Search.md) 和 [重排序](./03-Reranking.md) 将分别深入两项检索技术，本篇关注它们在全链路中的位置。
@@ -202,7 +197,7 @@ Embedding（嵌入表示）把文本映射为数值向量，使语义相近的�
 余弦相似度定义为：
 
 $$
-\operatorname{cos}(\mathbf{q},\mathbf{d})=\frac{\mathbf{q}\cdot\mathbf{d}}{\|\mathbf{q}\|_2\|\mathbf{d}\|_2}
+\mathrm{cos}(\mathbf{q},\mathbf{d})=\frac{\mathbf{q}\cdot\mathbf{d}}{\|\mathbf{q}\|_2\|\mathbf{d}\|_2}
 $$
 
 ANN（Approximate Nearest Neighbor，近似最近邻）通过索引减少全量距离计算，通常以一定近似误差换取更好的延迟与资源效率。
@@ -251,10 +246,10 @@ flowchart TD
 BM25（Best Matching 25）是基于词频、逆文档频率与长度归一化的经典稀疏检索方法，适合型号、标准编号和精确术语；Dense Retrieval（稠密检索）更适合语义近似表达。Hybrid Search（混合检索）融合两路候选，RRF（Reciprocal Rank Fusion，倒数排名融合）可在不同检索器分数不可直接比较时按排名融合：
 
 $$
-\operatorname{RRF}(d)=\sum_{r\in\mathcal R}\frac{1}{k+\operatorname{rank}_r(d)}
+\mathrm{RRF}(d)=\sum_{r\in\mathcal{R}}\frac{1}{k+\mathrm{rank}_r(d)}
 $$
 
-其中 $k$ 是平滑常数，$\mathcal R$ 是参与融合的检索器集合。Reranking（重排序）对有限候选做更精细的相关性评估，常见方法包括 Cross-Encoder（交叉编码器，联合编码查询与候选文本）。它通常提高排序精度，但增加推理延迟；详细算法见 [02｜Hybrid Search](./02-Hybrid-Search.md) 和 [03｜Reranking](./03-Reranking.md)。
+其中 `k` 是平滑常数，`R` 表示参与融合的检索器集合。Reranking（重排序）对有限候选做更精细的相关性评估，常见方法包括 Cross-Encoder（交叉编码器，联合编码查询与候选文本）。它通常提高排序精度，但增加推理延迟；详细算法见 [02｜Hybrid Search](./02-Hybrid-Search.md) 和 [03｜Reranking](./03-Reranking.md)。
 
 ## 8. 上下文工程、证据约束生成与引用
 
