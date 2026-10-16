@@ -127,7 +127,7 @@ $$
 ColBERT（Contextualized Late Interaction over BERT，基于 BERT 上下文化表示的后期交互）为查询和文档保留多个 Token 向量，并在检索阶段执行细粒度匹配。典型 MaxSim 聚合形式为：
 
 $$
-S(q,d)=\sum_{i=1}^{|q|}\max_{1\le j\le |d|}\operatorname{sim}(q_i,d_j)
+S(q,d)=\sum_{i=1}^{|q|}\max_{1\le j\le |d|}\mathrm{sim}(q_i,d_j)
 $$
 
 其中每个查询 Token 选择与其最相近的文档 Token，再汇总得分。它既不像单向量检索那样把所有信息压缩到一个向量，也不必像 Cross-Encoder 一样对每对文本完整执行联合注意力；代价是更高的多向量存储与匹配开销。
@@ -309,10 +309,10 @@ flowchart TB
 MMR（Maximal Marginal Relevance，最大边际相关性）常用于平衡查询相关性与候选间冗余，其示意形式为：
 
 $$
-\operatorname{MMR}(d)=\lambda\,\operatorname{sim}(q,d)-(1-\lambda)\max_{d'\in S}\operatorname{sim}(d,d')
+\mathrm{MMR}(d)=\lambda\,\mathrm{sim}(q,d)-(1-\lambda)\max_{d'\in S}\mathrm{sim}(d,d')
 $$
 
-这里 $S$ 为已选集合，$\lambda$ 控制相关性与去冗余的权衡。MMR 不是 Cross-Encoder 的替代品；它通常属于证据集合优化策略。
+这里 `S` 为已选集合，`λ` 控制相关性与去冗余的权衡。MMR 不是 Cross-Encoder 的替代品；它通常属于证据集合优化策略。
 
 ## 7. 模型选型：从实验基线到生产部署
 
