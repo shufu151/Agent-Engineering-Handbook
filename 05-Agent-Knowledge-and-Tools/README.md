@@ -1,509 +1,543 @@
-# Agent 知识与工具能力｜全章知识网络与学习导航
+# Agent 知识与工具能力：中心放射式知识总览与学习导航
 
-> 本章定位：理解 Agent 如何<strong>获取可信知识、选择外部能力、执行真实操作，并在权限与状态约束下交付可验证结果</strong>。本页是七篇专题的知识总览和导航，不替代专题正文。
+> <strong>本章定位：</strong>把知识获取、工具接入、任务执行与可靠交付连成一个 Agent 工程系统。本 README 是全章知识地图与学习入口，不重复七篇专题的推导和实现细节。
 >
-> 推荐阅读：先掌握知识链（01—03），再掌握工具链（04—06），最后通过协同篇（07）建立端到端系统观。
+> <strong>阅读方式：</strong>每幅图以中心主题为枢纽，上方与下方各三个主分支向中心汇聚或从中心辐射；外围节点代表二级知识。少量虚线只标记关键的跨模块依赖，避免大量长距离连线穿越图面。
 
-## 一、从问题出发：Agent 的知识与行动是两种不同能力
+## 一、总览：七篇专题如何组成一个系统
 
-模型的参数知识无法保证覆盖最新企业制度、产品版本和私有文档；即使知道操作流程，也不代表已经查询数据库、修改文件或完成审批。因此，Agent 必须把<strong>认识世界</strong>与<strong>改变世界</strong>分开设计：知识链负责寻找依据，工具链负责读取实时事实或产生实际副作用，执行层决定何时组合两者，治理层判断是否可信且被授权。
+Agent 不仅要“知道”，还要“能做”。知识链将外部资料转化为可核实的证据；行动链将任务意图转化为实际操作；运行时负责把两者协调为有状态、受权限约束、可验证的执行过程。
 
-<strong>总原则：</strong>检索命中不等于证据充分；工具返回成功不等于业务目标完成；模型提出调用意图不等于获得执行权限。
-
-```mermaid
-flowchart LR
-    C["Agent 知识与工具协同"]
-    K["知识获取"]
-    A["行动执行"]
-    O["任务编排"]
-    G["安全与质量"]
-    R["可验证交付"]
-    K1["RAG：知识链路"]
-    K2["Hybrid：多路召回"]
-    K3["Reranking：证据精排"]
-    A1["Function Calling"]
-    A2["MCP：标准接入"]
-    A3["Skills：复用方法"]
-    O1["路由与依赖规划"]
-    O2["状态与恢复"]
-    G1["权限与来源"]
-    G2["校验与追踪"]
-    C -->|依据| K
-    C -->|动作| A
-    C -->|调度| O
-    C -->|约束| G
-    C -->|目标| R
-    K --- K1
-    K --- K2
-    K --- K3
-    A --- A1
-    A --- A2
-    A --- A3
-    O --- O1
-    O --- O2
-    G --- G1
-    G --- G2
-    K3 -->|证据驱动决策| O1
-    A3 -->|提供策略| O1
-    A2 -->|提供工具来源| A1
-    O2 -->|支持恢复| R
-    G2 -->|交付门禁| R
-    G1 -->|过滤知识| K1
-    G1 -->|授权操作| A1
-    classDef core fill:#163a62,stroke:#0d2744,color:#fff,stroke-width:2px
-    classDef know fill:#e8f2ff,stroke:#3b82c4,color:#163a62
-    classDef tool fill:#e8f7ef,stroke:#389268,color:#14532d
-    classDef control fill:#fff0df,stroke:#c78535,color:#713f12
-    classDef guard fill:#fce8ef,stroke:#bf6284,color:#831843
-    classDef result fill:#f0eaff,stroke:#8b6dbb,color:#4c1d95
-    class C core
-    class K,K1,K2,K3 know
-    class A,A1,A2,A3 tool
-    class O,O1,O2 control
-    class G,G1,G2 guard
-    class R result
-```
-
-<strong>图谱解读：</strong>中心的协同系统向知识、行动、编排、治理和交付五个方向辐射。跨分支连线表示真实依赖：权限既约束检索也约束工具；Skills 为路由提供操作知识；重排后的证据影响下一步决策；状态与校验共同保证交付。
-
-## 二、知识链：从原始文档到可引用证据
-
-[RAG](./01-RAG.md) 建立离线摄取、切分、索引和在线检索的全局链路；[Hybrid Search](./02-Hybrid-Search.md) 解决精确词项与语义召回互补；[Reranking](./03-Reranking.md) 解决候选集合内部的相关性和证据排序。三者是<strong>层级递进关系</strong>，不是三个互相替代的产品。
-
-知识质量受整个链路约束：文档解析遗漏、版本不一致、权限过滤错误，均无法仅靠更强的重排模型修复。对于型号、错误码、单位和标准编号，精确检索尤其重要；对于自然语言问题，语义召回通常提供补充。
+### 全章核心知识网络
 
 ```mermaid
-flowchart LR
-    C["可信证据"]
-    I["离线索引"]
-    Q["在线查询"]
-    F["证据筛选"]
-    E["证据交付"]
-    I1["解析与结构"]
-    I2["Chunk 与元数据"]
-    I3["Embedding 与索引"]
-    Q1["Query Rewrite"]
-    Q2["BM25 关键词"]
-    Q3["Dense 向量"]
-    Q4["RRF 等融合"]
-    F1["Cross-Encoder 精排"]
-    F2["去重与多样性"]
-    F3["权限与版本过滤"]
-    E1["引用与拒答"]
-    E2["上下文预算"]
-    C -->|知识准备| I
-    C -->|候选获取| Q
-    C -->|证据决策| F
-    C -->|生成输入| E
-    I --- I1
-    I --- I2
-    I --- I3
-    Q --- Q1
-    Q --- Q2
-    Q --- Q3
-    Q --- Q4
-    F --- F1
-    F --- F2
-    F --- F3
-    E --- E1
-    E --- E2
-    I2 -->|索引粒度| Q3
-    Q2 -->|排名融合| Q4
-    Q3 -->|排名融合| Q4
-    Q4 -->|候选池| F1
-    F3 -->|查询前过滤| Q2
-    F1 -->|控制上下文| E2
-    F2 -->|保留多来源| E1
-    classDef core fill:#163a62,stroke:#0d2744,color:#fff,stroke-width:2px
-    classDef know fill:#e8f2ff,stroke:#3b82c4,color:#163a62
-    classDef tool fill:#e8f7ef,stroke:#389268,color:#14532d
-    classDef control fill:#fff0df,stroke:#c78535,color:#713f12
-    classDef guard fill:#fce8ef,stroke:#bf6284,color:#831843
-    classDef result fill:#f0eaff,stroke:#8b6dbb,color:#4c1d95
-    class C core
-    class I,I1,I2,I3,Q,Q1,Q2,Q3,Q4 know
-    class F,F1,F2 control
-    class F3 guard
-    class E,E1,E2 result
+flowchart TB
+    ROOT["Agent 知识与工具能力"]
+    A["RAG：知识增强"]
+    A1["解析、切分、索引"]
+    A2["检索、引用、生成"]
+    B["Hybrid：召回融合"]
+    B1["BM25 精确匹配"]
+    B2["向量语义召回"]
+    C["Reranking：证据精排"]
+    C1["相关性重估"]
+    C2["排序与上下文选择"]
+    D["Function Calling：调用契约"]
+    D1["Schema 与参数"]
+    D2["工具结果回填"]
+    E["MCP + Skills：能力组织"]
+    E1["标准化外部接入"]
+    E2["任务方法复用"]
+    F["协同执行：交付闭环"]
+    F1["路由、状态与恢复"]
+    F2["权限、校验与追踪"]
+    A --> ROOT
+    A1 --> A
+    A2 --> A
+    B --> ROOT
+    B1 --> B
+    B2 --> B
+    C --> ROOT
+    C1 --> C
+    C2 --> C
+    ROOT --> D
+    D --> D1
+    D --> D2
+    ROOT --> E
+    E --> E1
+    E --> E2
+    ROOT --> F
+    F --> F1
+    F --> F2
+    A ~~~ B
+    B ~~~ C
+    D ~~~ E
+    E ~~~ F
+    C -. "证据驱动" .-> F
+    E -. "接入与指导" .-> D
+    classDef core fill:#17365d,stroke:#0b2340,color:#ffffff,stroke-width:3px
+    classDef blue fill:#e8f2ff,stroke:#3b82c4,color:#123d67
+    classDef green fill:#e7f6ed,stroke:#389268,color:#14532d
+    classDef orange fill:#fff0de,stroke:#cb883e,color:#784313
+    classDef purple fill:#f1ebff,stroke:#8c71bf,color:#4c2785
+    classDef pink fill:#fce8ef,stroke:#c2648a,color:#84234d
+    classDef teal fill:#e1f7f5,stroke:#2d918b,color:#135b56
+    class ROOT core
+    class A,A1,A2 blue
+    class B,B1,B2 teal
+    class C,C1,C2 purple
+    class D,D1,D2 green
+    class E,E1,E2 orange
+    class F,F1,F2 pink
 ```
 
-<strong>图谱解读：</strong>RAG 定义完整系统；混合检索扩大可用候选覆盖；重排序把有限上下文留给最有价值的证据。<strong>检索分数不是事实真值</strong>，证据仍需版本、来源、权限与引用校验。
+<strong>图谱解读：</strong>六个主分支围绕同一执行目标组织。RAG、Hybrid、Reranking 是知识链的三个层次；Function Calling、MCP、Skills 分别负责调用表达、能力接入和任务方法；第七篇将这些能力纳入任务状态、权限与质量约束。虚线强调两个关键交点：证据影响决策，能力组织影响工具调用。
 
-### 知识链的关键取舍
+<strong>先建立三个边界：</strong>检索命中不等于证据充分；模型生成工具调用参数不等于获得执行授权；工具执行成功不等于用户任务完成。
 
-| 决策问题 | 优先考虑 | 不能忽略的代价 |
+## 二、知识链：如何把原始资料变成可信证据
+
+这一条链解决模型缺少私有、最新或领域知识的问题。其因果关系是：原始资料先被正确解析与索引，召回阶段才能找到候选；候选覆盖足够后，重排才有意义；最后还要检查权限、版本和引用。
+
+### 知识检索与证据质量
+
+```mermaid
+flowchart TB
+    ROOT["从文档到可信证据"]
+    KA["数据准备"]
+    KA1["结构解析与 Chunk"]
+    KA2["元数据、版本、ACL"]
+    KB["多路召回"]
+    KB1["BM25 / 关键词"]
+    KB2["Dense / Embedding"]
+    KC["融合与排序"]
+    KC1["RRF 候选融合"]
+    KC2["Cross-Encoder 精排"]
+    KD["上下文构建"]
+    KD1["去重与多样性"]
+    KD2["Token 预算与压缩"]
+    KE["可信约束"]
+    KE1["权限过滤与新鲜度"]
+    KE2["来源、页码与引用"]
+    KF["效果评测"]
+    KF1["Recall@K / nDCG"]
+    KF2["证据充分与引用准确"]
+    KA --> ROOT
+    KA1 --> KA
+    KA2 --> KA
+    KB --> ROOT
+    KB1 --> KB
+    KB2 --> KB
+    KC --> ROOT
+    KC1 --> KC
+    KC2 --> KC
+    ROOT --> KD
+    KD --> KD1
+    KD --> KD2
+    ROOT --> KE
+    KE --> KE1
+    KE --> KE2
+    ROOT --> KF
+    KF --> KF1
+    KF --> KF2
+    KA ~~~ KB
+    KB ~~~ KC
+    KD ~~~ KE
+    KE ~~~ KF
+    KA -. "权限元数据" .-> KE
+    KC -. "排序结果" .-> KD
+    classDef core fill:#17365d,stroke:#0b2340,color:#ffffff,stroke-width:3px
+    classDef blue fill:#e8f2ff,stroke:#3b82c4,color:#123d67
+    classDef green fill:#e7f6ed,stroke:#389268,color:#14532d
+    classDef orange fill:#fff0de,stroke:#cb883e,color:#784313
+    classDef purple fill:#f1ebff,stroke:#8c71bf,color:#4c2785
+    classDef pink fill:#fce8ef,stroke:#c2648a,color:#84234d
+    classDef teal fill:#e1f7f5,stroke:#2d918b,color:#135b56
+    class ROOT core
+    class KA,KA1,KA2 blue
+    class KB,KB1,KB2 teal
+    class KC,KC1,KC2 purple
+    class KD,KD1,KD2 green
+    class KE,KE1,KE2 orange
+    class KF,KF1,KF2 pink
+```
+
+<strong>图谱解读：</strong>召回关注“不要漏”，重排关注“排得准”，上下文构建关注“装得下且有依据”，治理关注“有权限且版本正确”。例如设备型号、错误码和标准编号常需要关键词精确召回；自然语言描述则可由向量检索补充。重排不能凭空恢复未被召回的文档。
+
+| 主题 | 解决的关键问题 | 深入阅读 |
 |---|---|---|
-| 精确型号、错误码、制度编号 | BM25／字段过滤 | 分词、同义词和字段维护 |
-| 自然语言语义问题 | Dense Retrieval（稠密检索） | 向量成本、近似误召回 |
-| 同时包含精确和语义约束 | Hybrid + 融合 | 候选窗口和分数可比性 |
-| 候选多、上下文紧张 | Reranking + 证据选择 | 额外推理延迟 |
-| 资料可能过期或越权 | 版本、ACL（访问控制列表）过滤 | 权限同步与索引更新 |
+| RAG | 知识如何摄取、检索并用于生成 | [01-RAG.md](./01-RAG.md) |
+| Hybrid Search | 精确匹配与语义召回如何互补 | [02-Hybrid-Search.md](./02-Hybrid-Search.md) |
+| Reranking | 如何从候选中选出最可信、最有用的证据 | [03-Reranking.md](./03-Reranking.md) |
 
-在学习指标时，要区分 Recall@K（前 K 项召回）、MRR（平均倒数排名）、nDCG（归一化折损累计增益）与最终回答正确率：<strong>排序改善不自动等于答案可靠</strong>。
+## 三、行动链：模型如何从“提出动作”走向“完成操作”
 
-## 三、工具链：从模型意图到受控业务动作
+工具体系有三个容易混淆的层次：<strong>Function Calling</strong> 是模型输出调用意图与结构化参数的机制；<strong>MCP（Model Context Protocol，模型上下文协议）</strong> 标准化外部工具、资源和提示模板的发现与访问；<strong>Agent Skills</strong> 则封装完成某类任务所需的指导、脚本和参考资料。三者不是互相替代的产品。
 
-[Function Calling](./04-Function-Calling.md) 规定模型如何提出结构化工具调用及参数；[MCP](./05-MCP.md) 规定应用如何发现和连接外部工具、资源与提示模板；[Agent Skills](./06-Agent-Skills.md) 组织任务级的操作知识、脚本和参考资料。三者处于不同抽象层：<strong>调用契约、连接协议、任务方法</strong>。
-
-模型负责提出候选调用，执行器负责 Schema 验证、身份授权、超时和结果归档。尤其是文件写入、审批提交等有副作用的动作，必须与普通只读查询分开治理。
+### 工具接入与能力复用
 
 ```mermaid
-flowchart LR
-    C["可控工具能力"]
-    FC["Function Calling"]
-    M["MCP"]
-    S["Agent Skills"]
-    RT["Agent Runtime"]
-    F1["工具 Schema"]
-    F2["参数与结果"]
-    M1["Host Client Server"]
-    M2["Tools Resources Prompts"]
-    M3["stdio / HTTP"]
-    S1["SKILL.md 元数据"]
-    S2["渐进式加载"]
-    S3["脚本与参考资料"]
-    R1["授权与审批"]
-    R2["幂等与重试"]
-    R3["Trace 与审计"]
-    C -->|调用意图| FC
-    C -->|外部接入| M
-    C -->|执行策略| S
-    C -->|运行保障| RT
-    FC --- F1
-    FC --- F2
-    M --- M1
-    M --- M2
-    M --- M3
-    S --- S1
-    S --- S2
-    S --- S3
-    RT --- R1
-    RT --- R2
-    RT --- R3
-    M2 -->|暴露工具契约| F1
-    S2 -->|按需选择| F1
-    S3 -->|使用外部能力| M2
-    F2 -->|执行前校验| R1
-    F2 -->|执行语义| R2
-    R3 -->|评估触发效果| S1
-    classDef core fill:#163a62,stroke:#0d2744,color:#fff,stroke-width:2px
-    classDef know fill:#e8f2ff,stroke:#3b82c4,color:#163a62
-    classDef tool fill:#e8f7ef,stroke:#389268,color:#14532d
-    classDef control fill:#fff0df,stroke:#c78535,color:#713f12
-    classDef guard fill:#fce8ef,stroke:#bf6284,color:#831843
-    classDef result fill:#f0eaff,stroke:#8b6dbb,color:#4c1d95
-    class C core
-    class FC,F1,F2,M,M1,M2,M3 tool
-    class S,S1,S2,S3 control
-    class RT,R1,R2,R3 guard
+flowchart TB
+    ROOT["Agent 外部行动能力"]
+    TA["调用表达"]
+    TA1["工具名称与 JSON Schema"]
+    TA2["参数校验与结果回填"]
+    TB["能力发现"]
+    TB1["工具目录与选择"]
+    TB2["候选过滤与路由"]
+    TC["标准连接"]
+    TC1["MCP Host / Client / Server"]
+    TC2["Tools / Resources / Prompts"]
+    TD["任务方法"]
+    TD1["SKILL.md 与描述"]
+    TD2["渐进式加载与脚本"]
+    TE["执行边界"]
+    TE1["认证、授权与审批"]
+    TE2["超时、重试、幂等"]
+    TF["执行反馈"]
+    TF1["工具结果与错误"]
+    TF2["任务状态与可追踪性"]
+    TA --> ROOT
+    TA1 --> TA
+    TA2 --> TA
+    TB --> ROOT
+    TB1 --> TB
+    TB2 --> TB
+    TC --> ROOT
+    TC1 --> TC
+    TC2 --> TC
+    ROOT --> TD
+    TD --> TD1
+    TD --> TD2
+    ROOT --> TE
+    TE --> TE1
+    TE --> TE2
+    ROOT --> TF
+    TF --> TF1
+    TF --> TF2
+    TA ~~~ TB
+    TB ~~~ TC
+    TD ~~~ TE
+    TE ~~~ TF
+    TD -. "指导选择" .-> TB
+    TC -. "提供能力" .-> TA
+    classDef core fill:#17365d,stroke:#0b2340,color:#ffffff,stroke-width:3px
+    classDef blue fill:#e8f2ff,stroke:#3b82c4,color:#123d67
+    classDef green fill:#e7f6ed,stroke:#389268,color:#14532d
+    classDef orange fill:#fff0de,stroke:#cb883e,color:#784313
+    classDef purple fill:#f1ebff,stroke:#8c71bf,color:#4c2785
+    classDef pink fill:#fce8ef,stroke:#c2648a,color:#84234d
+    classDef teal fill:#e1f7f5,stroke:#2d918b,color:#135b56
+    class ROOT core
+    class TA,TA1,TA2 green
+    class TB,TB1,TB2 teal
+    class TC,TC1,TC2 blue
+    class TD,TD1,TD2 purple
+    class TE,TE1,TE2 orange
+    class TF,TF1,TF2 pink
 ```
 
-<strong>图谱解读：</strong>MCP Server 提供可发现的能力，并不自动决定 Agent 应如何完成任务；Skill 可指导何时使用能力，但不获得额外权限；Function Calling 输出的参数只有经过 Runtime 校验才可以执行。
+<strong>图谱解读：</strong>Skill 指导“怎么完成任务”，MCP 解决“如何连接能力”，Function Calling 解决“模型怎样提出调用”。真正执行、鉴权、重试和记录状态的是应用运行时与服务端。尤其不能把 Skill 中的文字指令视为自动获得的工具权限。
 
-### 三类机制不要混淆
+| 主题 | 关键理解 | 深入阅读 |
+|---|---|---|
+| Function Calling | Tool Schema、选择、调用循环、并发与错误处理 | [04-Function-Calling.md](./04-Function-Calling.md) |
+| MCP | Host/Client/Server、传输、资源、授权与协议版本 | [05-MCP.md](./05-MCP.md) |
+| Agent Skills | SKILL.md、发现、激活、渐进式加载与治理 | [06-Agent-Skills.md](./06-Agent-Skills.md) |
 
-| 机制 | 核心问题 | 主要产物 | 不负责什么 |
-|---|---|---|---|
-| Function Calling | 模型如何表达一次工具调用 | 名称、结构化参数、调用结果 | 实际授权与执行保证 |
-| MCP（Model Context Protocol，模型上下文协议） | 应用如何标准化接入外部能力 | 工具／资源／提示的协议交互 | 任务规划与推理质量 |
-| Agent Skills（智能体技能） | 如何复用某类任务的方法 | `SKILL.md`、脚本、参考资料 | 独立的执行引擎或权限体系 |
+## 四、协同决策：什么时候查知识，什么时候调用工具？
 
-MCP 协议具有版本演进，初始化、传输、扩展和授权细节应以部署双方实际支持的规范版本为准，不能把某一历史版本的行为写成永恒约束。
+固定“先 RAG 后 Tool”不是通用解法。制度解释以检索为主；实时设备状态以 API 查询为主；按制度提交审批则需要知识与实时事实联合判断，并在写操作前验证权限。正确策略取决于<strong>目标、数据时效性、依赖关系与操作风险</strong>。
 
-## 四、协同决策：何时查知识，何时执行动作
-
-[知识检索与工具调用协同](./07-Knowledge-and-Tool-Integration.md) 是前六篇的汇合点。首先判断用户需要的是<strong>知识解释、实时事实、计算结果还是状态变更</strong>，再按来源可信度、时效性、权限和副作用风险选择能力。
-
-固定流程适合稳定高风险业务；动态 Agent 适合信息不全和探索性任务；混合方案以确定性工作流约束关键节点，在允许范围内进行模型决策。
+### 知识与工具的联合决策
 
 ```mermaid
-flowchart LR
-    C["任务路由决策"]
-    U["意图与上下文"]
-    K["知识证据"]
-    T["实时工具"]
-    P["规划执行"]
-    V["结果验证"]
-    U1["解释与规范"]
-    U2["实时查询"]
-    U3["状态变更"]
-    K1["RAG 检索"]
-    K2["证据充分性"]
-    T1["只读查询"]
-    T2["写入操作"]
-    P1["检索优先"]
-    P2["工具优先"]
-    P3["并行与迭代"]
-    V1["引用与权限"]
-    V2["结果与副作用"]
-    C -->|判断需求| U
-    C -->|获取依据| K
-    C -->|获取事实／行动| T
-    C -->|组织依赖| P
-    C -->|确认完成| V
-    U --- U1
-    U --- U2
-    U --- U3
-    K --- K1
-    K --- K2
-    T --- T1
-    T --- T2
-    P --- P1
-    P --- P2
-    P --- P3
-    V --- V1
-    V --- V2
-    U1 -->|文档型问题| K1
-    U2 -->|实时数据| T1
-    U3 -->|高风险动作| T2
-    K2 -->|证据决定动作| P1
-    T1 -->|事实驱动检索| P2
-    K1 -->|可迭代| P3
-    T1 -->|可并行| P3
-    T2 -->|执行后核对| V2
-    K2 -->|来源校验| V1
-    classDef core fill:#163a62,stroke:#0d2744,color:#fff,stroke-width:2px
-    classDef know fill:#e8f2ff,stroke:#3b82c4,color:#163a62
-    classDef tool fill:#e8f7ef,stroke:#389268,color:#14532d
-    classDef control fill:#fff0df,stroke:#c78535,color:#713f12
-    classDef guard fill:#fce8ef,stroke:#bf6284,color:#831843
-    classDef result fill:#f0eaff,stroke:#8b6dbb,color:#4c1d95
-    class C core
-    class K,K1,K2,U1 know
-    class T,T1,T2,U2 tool
-    class U,P,P1,P2,P3 control
-    class V,V1,V2,U3 guard
+flowchart TB
+    ROOT["任务驱动的能力路由"]
+    RA["任务识别"]
+    RA1["问答 / 查询 / 写操作"]
+    RA2["时效性与风险等级"]
+    RB["检索优先"]
+    RB1["规则、制度与依据"]
+    RB2["版本与证据检查"]
+    RC["工具优先"]
+    RC1["实时状态与精确数据"]
+    RC2["返回事实再决定检索"]
+    RD["并行执行"]
+    RD1["独立知识与事实分支"]
+    RD2["等待依赖汇合"]
+    RE["迭代执行"]
+    RE1["观察—判断—行动"]
+    RE2["有界循环与停止条件"]
+    RF["结果裁决"]
+    RF1["证据是否充分"]
+    RF2["操作是否获授权"]
+    RA --> ROOT
+    RA1 --> RA
+    RA2 --> RA
+    RB --> ROOT
+    RB1 --> RB
+    RB2 --> RB
+    RC --> ROOT
+    RC1 --> RC
+    RC2 --> RC
+    ROOT --> RD
+    RD --> RD1
+    RD --> RD2
+    ROOT --> RE
+    RE --> RE1
+    RE --> RE2
+    ROOT --> RF
+    RF --> RF1
+    RF --> RF2
+    RA ~~~ RB
+    RB ~~~ RC
+    RD ~~~ RE
+    RE ~~~ RF
+    RA -. "风险约束" .-> RF
+    RB -. "证据核实" .-> RF
+    classDef core fill:#17365d,stroke:#0b2340,color:#ffffff,stroke-width:3px
+    classDef blue fill:#e8f2ff,stroke:#3b82c4,color:#123d67
+    classDef green fill:#e7f6ed,stroke:#389268,color:#14532d
+    classDef orange fill:#fff0de,stroke:#cb883e,color:#784313
+    classDef purple fill:#f1ebff,stroke:#8c71bf,color:#4c2785
+    classDef pink fill:#fce8ef,stroke:#c2648a,color:#84234d
+    classDef teal fill:#e1f7f5,stroke:#2d918b,color:#135b56
+    class ROOT core
+    class RA,RA1,RA2 blue
+    class RB,RB1,RB2 teal
+    class RC,RC1,RC2 green
+    class RD,RD1,RD2 purple
+    class RE,RE1,RE2 orange
+    class RF,RF1,RF2 pink
 ```
 
-<strong>图谱解读：</strong>不是所有任务都必须先检索。解释制度通常从知识库开始；查询设备实时状态应优先调用 API；依据制度执行审批则需组合两者，并在真正写入前做权限和业务规则校验。
+<strong>图谱解读：</strong>从中心向外看，是不同任务条件下的策略选择；从外围向中心看，是证据与操作反馈共同影响下一次决策。并行仅适用于没有前后依赖的分支；迭代必须有最大轮次、超时和成本预算。
 
-## 五、运行时：把知识与工具变成可靠任务
+<strong>工程取舍：</strong>稳定、可审计的业务流程优先使用确定性 Workflow；探索性问题可在受限范围内使用模型动态路由；高风险写操作必须由服务端策略独立授权。
 
-协同系统需要显式维护任务状态（Task State）、证据引用（Evidence）、产物（Artifact）和审计记录（Audit Log）。DAG（Directed Acyclic Graph，有向无环图）适合描述已知步骤依赖，状态机适合管理运行、等待、重试、失败与恢复；两者可组合，不能互相完全替代。
+## 五、运行时：把一次调用升级为可恢复的业务任务
 
-对于外部写入操作，Checkpoint（检查点）只解决状态保存问题，不能自动防止重复副作用；仍需 Idempotency Key（幂等键）、状态核对和必要的补偿机制。
+复杂 Agent 需要管理任务状态、依赖、证据、文件产物和副作用。聊天历史不能代替任务数据库，Trace 也不能代替授权与事务保证。
+
+### 状态、可靠性与可观测性
 
 ```mermaid
-flowchart LR
-    C["可靠任务执行"]
-    PL["依赖规划"]
-    ST["状态持久化"]
-    EX["工具执行"]
-    EV["证据管理"]
-    GV["治理与交付"]
-    PL1["DAG 与并行"]
-    PL2["动态重规划"]
-    ST1["Checkpoint"]
-    ST2["恢复与重放"]
-    EX1["超时／退避"]
-    EX2["幂等与补偿"]
-    EV1["来源与版本"]
-    EV2["引用与置信边界"]
-    GV1["人工审批"]
-    GV2["Trace／指标"]
-    GV3["交付验收"]
-    C -->|安排任务| PL
-    C -->|保存状态| ST
-    C -->|执行动作| EX
-    C -->|保存依据| EV
-    C -->|控制风险| GV
-    PL --- PL1
-    PL --- PL2
-    ST --- ST1
-    ST --- ST2
-    EX --- EX1
-    EX --- EX2
-    EV --- EV1
-    EV --- EV2
-    GV --- GV1
-    GV --- GV2
-    GV --- GV3
-    PL1 -->|调度依赖| EX1
-    ST1 -->|恢复点| ST2
-    ST2 -->|防重复副作用| EX2
-    EV1 -->|可追溯| GV3
-    GV1 -->|写入前批准| EX2
-    GV2 -->|故障反馈| PL2
-    GV3 -->|记录最终状态| ST1
-    classDef core fill:#163a62,stroke:#0d2744,color:#fff,stroke-width:2px
-    classDef know fill:#e8f2ff,stroke:#3b82c4,color:#163a62
-    classDef tool fill:#e8f7ef,stroke:#389268,color:#14532d
-    classDef control fill:#fff0df,stroke:#c78535,color:#713f12
-    classDef guard fill:#fce8ef,stroke:#bf6284,color:#831843
-    classDef result fill:#f0eaff,stroke:#8b6dbb,color:#4c1d95
-    class C core
-    class PL,PL1,PL2,ST,ST1,ST2 control
-    class EX,EX1,EX2 tool
-    class EV,EV1,EV2 know
-    class GV,GV1,GV2 guard
-    class GV3 result
+flowchart TB
+    ROOT["可靠 Agent Runtime"]
+    SA["任务规划"]
+    SA1["DAG 依赖与并行"]
+    SA2["条件分支与停止条件"]
+    SB["状态管理"]
+    SB1["Checkpoint / Resume"]
+    SB2["任务与会话状态分离"]
+    SC["执行可靠性"]
+    SC1["超时、退避、熔断"]
+    SC2["幂等键与副作用去重"]
+    SD["证据管理"]
+    SD1["来源、版本、引用"]
+    SD2["检索与工具结果关联"]
+    SE["权限安全"]
+    SE1["ACL / 租户隔离"]
+    SE2["Prompt Injection 防护"]
+    SF["质量追踪"]
+    SF1["Trace、指标、审计"]
+    SF2["验证、审批、交付门禁"]
+    SA --> ROOT
+    SA1 --> SA
+    SA2 --> SA
+    SB --> ROOT
+    SB1 --> SB
+    SB2 --> SB
+    SC --> ROOT
+    SC1 --> SC
+    SC2 --> SC
+    ROOT --> SD
+    SD --> SD1
+    SD --> SD2
+    ROOT --> SE
+    SE --> SE1
+    SE --> SE2
+    ROOT --> SF
+    SF --> SF1
+    SF --> SF2
+    SA ~~~ SB
+    SB ~~~ SC
+    SD ~~~ SE
+    SE ~~~ SF
+    SC -. "失败恢复" .-> SB
+    SE -. "来源隔离" .-> SD
+    classDef core fill:#17365d,stroke:#0b2340,color:#ffffff,stroke-width:3px
+    classDef blue fill:#e8f2ff,stroke:#3b82c4,color:#123d67
+    classDef green fill:#e7f6ed,stroke:#389268,color:#14532d
+    classDef orange fill:#fff0de,stroke:#cb883e,color:#784313
+    classDef purple fill:#f1ebff,stroke:#8c71bf,color:#4c2785
+    classDef pink fill:#fce8ef,stroke:#c2648a,color:#84234d
+    classDef teal fill:#e1f7f5,stroke:#2d918b,color:#135b56
+    class ROOT core
+    class SA,SA1,SA2 blue
+    class SB,SB1,SB2 teal
+    class SC,SC1,SC2 green
+    class SD,SD1,SD2 purple
+    class SE,SE1,SE2 orange
+    class SF,SF1,SF2 pink
 ```
 
-<strong>图谱解读：</strong>可靠性不是“失败就重试”。必须知道哪些步骤已完成、哪些外部操作可能已经生效，以及重试是否安全。证据、任务状态和审计数据各有用途，不应全部混入对话历史。
+<strong>图谱解读：</strong>任务规划决定先后依赖，Checkpoint 保存可恢复状态，幂等性处理“外部操作已成功但本地未记录”的重复执行风险。证据治理和权限控制同时覆盖检索与工具。最终是否交付由业务校验结果决定，而不是由模型自行宣称成功。
+
+| 失败情形 | 不推荐做法 | 更稳妥的处理 |
+|---|---|---|
+| 检索无结果 | 编造答案 | 查询改写、补检或明确证据不足 |
+| 工具超时 | 无限重试 | 限次退避、状态核对 |
+| 提交结果未知 | 直接重复提交 | 幂等键、查询外部状态 |
+| 权限不足 | 换工具绕过 | 停止并请求授权 |
+| 译文校验失败 | 全量重新执行 | 定位失败步骤并局部修复 |
 
 ## 六、贯穿案例：企业医疗设备文档翻译 Agent
 
-一个完整请求可能是：“将英文设备说明书翻译为中文，保留表格和图片，检查型号与单位，生成质量报告。”它同时包含知识检索、文件操作、业务规则、模型推理和结果校验，能够串联本章全部七篇。
+同一个任务可以检验七篇知识是否真正连成系统。以“将英文设备说明书翻译成中文，保留版式并检查型号、单位”为例：先识别文件与任务约束；从受控术语库取得依据；通过工具解析、翻译、排版；再以规则与视觉校验交付文件。
+
+### 企业文档翻译能力协同
 
 ```mermaid
-flowchart LR
-    C["文档翻译交付"]
-    N["知识约束"]
-    D["文档处理"]
-    A["Agent 编排"]
-    Q["质量门禁"]
-    R["交付产物"]
-    N1["术语与制度 RAG"]
-    N2["型号精确匹配"]
-    D1["PDF／Word 解析"]
-    D2["模型翻译"]
-    D3["版式重建"]
-    A1["翻译 Skill"]
-    A2["Function Calling／MCP"]
-    A3["状态与检查点"]
-    Q1["数字／单位规则"]
-    Q2["视觉版式校验"]
-    Q3["人工复核"]
-    R1["译文文件"]
-    R2["质量与引用报告"]
-    C -->|获取规则| N
-    C -->|处理文件| D
-    C -->|组织任务| A
-    C -->|校验结果| Q
-    C -->|形成交付| R
-    N --- N1
-    N --- N2
-    D --- D1
-    D --- D2
-    D --- D3
-    A --- A1
-    A --- A2
-    A --- A3
-    Q --- Q1
-    Q --- Q2
-    Q --- Q3
-    R --- R1
-    R --- R2
-    N1 -->|术语约束| D2
-    N2 -->|型号核对| Q1
-    A1 -->|选择策略| D1
-    A2 -->|执行工具| D3
-    D1 -->|结构输入| D2
-    D2 -->|译文映射| D3
-    D3 -->|视觉检查| Q2
-    Q1 -->|质量证据| R2
-    Q2 -->|通过才交付| R1
-    Q3 -->|疑难确认| R2
-    A3 -->|支持恢复| R1
-    classDef core fill:#163a62,stroke:#0d2744,color:#fff,stroke-width:2px
-    classDef know fill:#e8f2ff,stroke:#3b82c4,color:#163a62
-    classDef tool fill:#e8f7ef,stroke:#389268,color:#14532d
-    classDef control fill:#fff0df,stroke:#c78535,color:#713f12
-    classDef guard fill:#fce8ef,stroke:#bf6284,color:#831843
-    classDef result fill:#f0eaff,stroke:#8b6dbb,color:#4c1d95
-    class C core
-    class N,N1,N2 know
-    class D,D1,D2,D3 tool
-    class A,A1,A2,A3 control
-    class Q,Q1,Q2,Q3 guard
-    class R,R1,R2 result
+flowchart TB
+    ROOT["可交付的文档翻译任务"]
+    PA["任务理解"]
+    PA1["文件类型与目标语言"]
+    PA2["版式、术语、合规约束"]
+    PB["知识检索"]
+    PB1["术语表与产品型号"]
+    PB2["质量标准与版本"]
+    PC["文件操作"]
+    PC1["PDF / Word / 图片解析"]
+    PC2["翻译、排版与导出"]
+    PD["技能复用"]
+    PD1["翻译 Skill 指导"]
+    PD2["校验 Skill 与脚本"]
+    PE["执行管理"]
+    PE1["分支并行与状态保存"]
+    PE2["失败重试与人工确认"]
+    PF["质量交付"]
+    PF1["数字、单位、型号校验"]
+    PF2["视觉回归与质量报告"]
+    PA --> ROOT
+    PA1 --> PA
+    PA2 --> PA
+    PB --> ROOT
+    PB1 --> PB
+    PB2 --> PB
+    PC --> ROOT
+    PC1 --> PC
+    PC2 --> PC
+    ROOT --> PD
+    PD --> PD1
+    PD --> PD2
+    ROOT --> PE
+    PE --> PE1
+    PE --> PE2
+    ROOT --> PF
+    PF --> PF1
+    PF --> PF2
+    PA ~~~ PB
+    PB ~~~ PC
+    PD ~~~ PE
+    PE ~~~ PF
+    PB -. "校验依据" .-> PF
+    PD -. "执行指导" .-> PC
+    classDef core fill:#17365d,stroke:#0b2340,color:#ffffff,stroke-width:3px
+    classDef blue fill:#e8f2ff,stroke:#3b82c4,color:#123d67
+    classDef green fill:#e7f6ed,stroke:#389268,color:#14532d
+    classDef orange fill:#fff0de,stroke:#cb883e,color:#784313
+    classDef purple fill:#f1ebff,stroke:#8c71bf,color:#4c2785
+    classDef pink fill:#fce8ef,stroke:#c2648a,color:#84234d
+    classDef teal fill:#e1f7f5,stroke:#2d918b,color:#135b56
+    class ROOT core
+    class PA,PA1,PA2 blue
+    class PB,PB1,PB2 teal
+    class PC,PC1,PC2 green
+    class PD,PD1,PD2 purple
+    class PE,PE1,PE2 orange
+    class PF,PF1,PF2 pink
 ```
 
-<strong>图谱解读：</strong>RAG 提供术语依据，精确检索保护型号，Skills 提供处理策略，Function Calling 与 MCP 接入解析和导出能力，运行时管理跨步骤状态，质量门禁决定是否交付。<strong>“翻译完成”与“文件可交付”是不同验收条件</strong>。
+<strong>图谱解读：</strong>术语库提供“翻译依据”，工具提供“文件处理动作”，Skills 提供“可复用的操作方法”，Runtime 提供“执行与恢复能力”，质量检查决定“能否交付”。对于医疗设备型号、数值与单位，优先使用确定性比对；版式质量可结合规则和视觉评估。任何自动修复都应有边界与复核机制。
 
-## 七、工程选型：以约束和风险决定复杂度
+## 七、如何选型：不同任务需要不同的组合
 
-| 场景 | 推荐起点 | 进一步升级的触发条件 |
+| 场景 | 核心能力组合 | 关键原因 |
 |---|---|---|
-| 纯知识问答 | 基础 RAG + 引用 | 召回不足时引入混合检索与精排 |
-| 多种资料混合、型号敏感 | Hybrid Search + 元数据过滤 | 候选噪声大时引入 Reranking |
-| 单次计算或内部函数 | 普通函数调用 | 模型需要自主选工具时引入 Function Calling |
-| 多应用共享外部能力 | MCP Server | 需要跨团队标准化、权限治理和远程接入 |
-| 重复的专业任务方法 | Agent Skills | 多步骤规则稳定、需要按需加载和版本管理 |
-| 多步骤、存在失败恢复 | 有状态 Workflow／Runtime | 需要动态规划时引入受约束 Agent |
-| 高风险写操作 | 确定性工作流 + 审批 | 不应只依赖模型自由决策 |
+| 企业制度问答 | RAG + Hybrid + Reranking | 依据、覆盖、排序与引用 |
+| 设备实时状态查询 | Function Calling + 业务 API / MCP | 需要最新的结构化事实 |
+| 按制度办理审批 | RAG + API + Workflow + 审批 | 规则依据与副作用同时存在 |
+| 技术文档翻译 | Skills + 检索 + 文档工具 + 校验 | 多步骤方法复用与产物质量 |
+| 跨系统多步骤任务 | MCP + Runtime + 状态恢复 | 接入、依赖、错误和权限治理 |
 
-<strong>选型顺序：</strong>先明确业务目标和错误代价，再选知识源、工具边界、状态机制与评测方式；不要为了使用 Agent 而把简单流程复杂化。
+<strong>选型原则：</strong>先定义业务正确性和权限边界，再选择检索与工具；优先把确定性操作交给代码或规则；只有确实需要动态判断时才引入自主规划。
 
-## 八、横向关联：哪些能力共同决定系统质量？
+## 八、学习导航：七篇专题与推荐顺序
 
-这一张网络聚焦容易被拆散讨论的工程问题：质量、性能、安全与可观测性。它们不是最终补丁，而是贯穿检索和执行两条链路的横向约束。
+建议按“知识准备 → 召回优化 → 证据排序 → 调用表达 → 标准接入 → 能力复用 → 协同工程”的顺序阅读。
+
+### 学习路线与知识依赖
 
 ```mermaid
-flowchart LR
-    C["端到端系统质量"]
-    Q["正确性"]
-    L["效率成本"]
-    S["安全治理"]
-    O["可观测性"]
-    Q1["Recall@K／nDCG"]
-    Q2["工具参数正确率"]
-    Q3["任务成功率"]
-    L1["候选窗口／精排"]
-    L2["Token／缓存／并行"]
-    S1["ACL／租户隔离"]
-    S2["审批／最小权限"]
-    S3["提示注入隔离"]
-    O1["Trace 与审计"]
-    O2["错误分层／回归"]
-    C -->|目标| Q
-    C -->|约束| L
-    C -->|边界| S
-    C -->|反馈| O
-    Q --- Q1
-    Q --- Q2
-    Q --- Q3
-    L --- L1
-    L --- L2
-    S --- S1
-    S --- S2
-    S --- S3
-    O --- O1
-    O --- O2
-    Q1 -->|检索贡献| Q3
-    Q2 -->|执行贡献| Q3
-    L1 -->|精度成本权衡| Q1
-    L2 -->|延迟约束| Q3
-    S1 -->|先过滤再检索| Q1
-    S2 -->|操作授权| Q2
-    S3 -->|攻击回归| O2
-    O1 -->|定位失败| Q3
-    O2 -->|优化依据| L2
-    classDef core fill:#163a62,stroke:#0d2744,color:#fff,stroke-width:2px
-    classDef know fill:#e8f2ff,stroke:#3b82c4,color:#163a62
-    classDef tool fill:#e8f7ef,stroke:#389268,color:#14532d
-    classDef control fill:#fff0df,stroke:#c78535,color:#713f12
-    classDef guard fill:#fce8ef,stroke:#bf6284,color:#831843
-    classDef result fill:#f0eaff,stroke:#8b6dbb,color:#4c1d95
-    class C core
-    class Q,Q1,Q2 know
-    class Q3 result
-    class L,L1,L2 control
-    class S,S1,S2,S3 guard
-    class O,O1,O2 tool
+flowchart TB
+    ROOT["七篇专题学习地图"]
+    LA["01 RAG"]
+    LA1["摄取、索引与检索"]
+    LA2["证据与引用"]
+    LB["02 Hybrid Search"]
+    LB1["关键词与向量"]
+    LB2["融合与召回"]
+    LC["03 Reranking"]
+    LC1["精排模型"]
+    LC2["候选质量"]
+    LD["04 Function Calling"]
+    LD1["调用协议与 Schema"]
+    LD2["执行循环"]
+    LE["05 MCP + 06 Skills"]
+    LE1["连接外部系统"]
+    LE2["复用任务方法"]
+    LF["07 协同整合"]
+    LF1["路由、编排、恢复"]
+    LF2["治理、评测、交付"]
+    LA --> ROOT
+    LA1 --> LA
+    LA2 --> LA
+    LB --> ROOT
+    LB1 --> LB
+    LB2 --> LB
+    LC --> ROOT
+    LC1 --> LC
+    LC2 --> LC
+    ROOT --> LD
+    LD --> LD1
+    LD --> LD2
+    ROOT --> LE
+    LE --> LE1
+    LE --> LE2
+    ROOT --> LF
+    LF --> LF1
+    LF --> LF2
+    LA ~~~ LB
+    LB ~~~ LC
+    LD ~~~ LE
+    LE ~~~ LF
+    LC -. "知识链汇总" .-> LF
+    LE -. "行动链汇总" .-> LF
+    classDef core fill:#17365d,stroke:#0b2340,color:#ffffff,stroke-width:3px
+    classDef blue fill:#e8f2ff,stroke:#3b82c4,color:#123d67
+    classDef green fill:#e7f6ed,stroke:#389268,color:#14532d
+    classDef orange fill:#fff0de,stroke:#cb883e,color:#784313
+    classDef purple fill:#f1ebff,stroke:#8c71bf,color:#4c2785
+    classDef pink fill:#fce8ef,stroke:#c2648a,color:#84234d
+    classDef teal fill:#e1f7f5,stroke:#2d918b,color:#135b56
+    class ROOT core
+    class LA,LA1,LA2 blue
+    class LB,LB1,LB2 teal
+    class LC,LC1,LC2 purple
+    class LD,LD1,LD2 green
+    class LE,LE1,LE2 orange
+    class LF,LF1,LF2 pink
 ```
 
-<strong>图谱解读：</strong>Recall@K 和工具成功率都是局部指标，最终需要用端到端任务成功率验收。检索权限过滤、工具授权、提示注入防护和 Trace 必须在系统设计阶段统一考虑。
+<strong>图谱解读：</strong>前三篇建立知识获取与质量优化基础；第四至六篇建立工具执行、外部接入与可复用方法；第七篇将前六篇整合为具有状态、安全与评测的完整 Agent 系统。
 
-## 九、七篇知识文档：按依赖顺序深入学习
+1. [01｜RAG：检索增强生成与完整链路](./01-RAG.md) — 理解知识如何进入模型上下文。
+2. [02｜Hybrid Search：向量、关键词与混合检索](./02-Hybrid-Search.md) — 理解召回互补与融合策略。
+3. [03｜Reranking：重排序与检索质量优化](./03-Reranking.md) — 理解候选精排和证据质量。
+4. [04｜Function Calling：函数调用协议与执行流程](./04-Function-Calling.md) — 理解工具契约、参数与调用循环。
+5. [05｜MCP：Model Context Protocol 的组成与边界](./05-MCP.md) — 理解跨系统能力发现与标准接入。
+6. [06｜Agent Skills：可复用能力封装](./06-Agent-Skills.md) — 理解能力发现、渐进式加载与任务方法复用。
+7. [07｜Knowledge and Tool Integration：知识检索与工具调用协同](./07-Knowledge-and-Tool-Integration.md) — 理解完整运行时、可靠性与工程取舍。
 
-| 顺序 | 专题文档 | 应掌握的核心问题 | 与下一篇的衔接 |
-|---|---|---|---|
-| 01 | [RAG：检索增强生成与企业知识系统完整链路](./01-RAG.md) | 离线索引、在线问答、Chunk、Embedding、引用与评测 | 检索阶段如何提高候选覆盖？ |
-| 02 | [向量、关键词与混合检索](./02-Hybrid-Search.md) | BM25、稠密检索、RRF、过滤、候选融合 | 多路召回后如何选择更好证据？ |
-| 03 | [Reranking：重排序与证据选择](./03-Reranking.md) | Cross-Encoder、Late Interaction、排序学习与多阶段精排 | 有了知识后如何执行实际操作？ |
-| 04 | [Function Calling：工具调用协议与执行机制](./04-Function-Calling.md) | Tool Schema、调用生命周期、并行、错误与幂等 | 外部工具如何跨系统标准化连接？ |
-| 05 | [MCP：协议组成、边界与企业实践](./05-MCP.md) | Host／Client／Server、Tools／Resources／Prompts、传输与授权 | 如何复用完整任务的方法？ |
-| 06 | [Agent Skills：能力封装与渐进式加载](./06-Agent-Skills.md) | `SKILL.md`、触发、按需加载、脚本与治理 | 如何让知识、方法和工具一起运行？ |
-| 07 | [知识检索与工具调用协同](./07-Knowledge-and-Tool-Integration.md) | 路由、DAG、状态、证据、执行、恢复与评测 | 形成完整 Agent 工程架构 |
+## 九、读完本章应形成的工程认知
 
-<strong>推荐学习方式：</strong>第一遍按 01→07 理解全链路；第二遍以“企业文档翻译”案例倒推每个模块为什么存在；第三遍针对项目瓶颈返回具体专题深入研究。
+<strong>第一，知识与行动分离但相互依赖。</strong>检索提供依据，工具提供真实操作；实时事实通常来自业务系统，不能把所有信息都当作静态文档检索。
 
-## 十、知识边界与最终总结
+<strong>第二，协议、方法与执行器各有边界。</strong>Function Calling 表达调用，MCP 标准化接入，Skills 组织任务知识，Runtime 负责调度、权限、状态与恢复。
 
-本章最终建立的是一套<strong>知识—决策—行动—验证</strong>协同体系：RAG 提供可引用的外部知识；Hybrid Search 提高多类型查询的召回覆盖；Reranking 让有限上下文容纳更优证据；Function Calling 表达模型的结构化调用意图；MCP 统一外部能力接入；Skills 复用任务方法；Runtime 将它们组织成有状态、可审计、可恢复的业务执行。
+<strong>第三，正确性必须端到端验证。</strong>检索质量、工具调用成功率和最终任务成功率是不同指标。企业级系统必须同时评测证据质量、权限安全、工具副作用、交付产物与失败恢复。
 
-最重要的三个工程边界是：<strong>知识证据不等于执行指令</strong>，<strong>模型意图不等于操作授权</strong>，<strong>局部组件成功不等于端到端交付成功</strong>。
-
-后续研究应围绕可度量的业务目标持续优化：正确检索、正确调用、正确恢复、正确拒绝越权请求，并且能解释每个结果来自哪里、每个操作为何发生。
+<strong>全章总结：</strong>以可信知识支持判断，以受控工具完成行动，以可复用 Skills 降低重复开发，以可靠 Runtime 保障状态和安全，最终形成<strong>可验证、可恢复、可追溯</strong>的 Agent 工程闭环。
 
